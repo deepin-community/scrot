@@ -1,0 +1,5 @@
+Test-Command: scrot -v
+Restrictions: superficial
+
+Test-Command: xvfb-run -a scrot -t 10
+Depends: @, xauth, xvfb

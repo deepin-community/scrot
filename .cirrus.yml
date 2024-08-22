@@ -1,0 +1,137 @@
+# Copyright 2021-2023 Guilherme Janczak <guilherme.janczak@yandex.com>
+# Copyright 2022      Zev Weiss <zev@bewilderbeest.net>
+# Copyright 2023      NRK <nrk@disroot.org>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to
+# deal in the Software without restriction, including without limitation the
+# rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+# sell copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies of the Software and its documentation and acknowledgment shall be
+# given in the documentation and software packages that this Software was
+# used.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+common_template: &common_script
+  name: ${OS}-${CC}
+  build_script:
+    - ./autogen.sh
+    - ./configure SCROT_PRIVATE_FLAGS="-Werror -Wno-error=cpp -Wno-error=pedantic"
+    - make distcheck
+  test_script:
+    - make
+    - src/scrot -v
+  on_failure:
+    autotools_artifacts:
+     path: config.log
+
+task:
+  matrix:
+    - container:
+        image: alpine:latest
+      env:
+        OS: alpine-latest
+    - container:
+        image: alpine:edge
+      env:
+        OS: alpine-edge
+  container:
+    kvm: true
+  env:
+    matrix:
+      - CC: clang
+      - CC: gcc
+  install_script:
+    - apk add autoconf autoconf-archive automake binutils gzip make pkgconfig
+                       $CC xorg-server-dev libxcomposite-dev libxext-dev
+                       libxfixes-dev libxinerama-dev imlib2-dev musl-dev
+                       bsd-compat-headers libbsd-dev llvm-dev
+  << : *common_script
+
+task:
+  matrix:
+    - container:
+        image: debian:testing
+      env:
+        OS: debian-testing
+    - container:
+        image: debian:unstable
+      env:
+        OS: debian-unstable
+  container:
+    kvm: true
+  env:
+    matrix:
+      - CC: clang
+      - CC: gcc
+      - CC: tcc
+  install_script:
+    - apt-get update
+    - apt-get install -y autoconf autoconf-archive make pkg-config $CC
+                         libx11-dev libxcomposite-dev libxext-dev libxfixes-dev
+                         libxinerama-dev libimlib2-dev libbsd-dev
+  << : *common_script
+
+task:
+  freebsd_instance:
+    # Keep updated with the newest release from
+    # https://www.freebsd.org/releases/
+    image: freebsd-13-2-release-amd64
+  env:
+    OS: freebsd
+    matrix:
+      - CC: clang
+      - CC: gcc
+  install_script:
+    - pkg install -y autoconf autoconf-archive automake pkgconf gcc libX11
+                     libXcomposite libXext libXfixes libXinerama imlib2
+  << : *common_script
+
+task:
+  macos_instance:
+    # Keep updated with the newest release from
+    # https://cirrus-ci.org/guide/macOS/
+    image: ghcr.io/cirruslabs/macos-ventura-base:latest
+  env:
+    OS: macos
+    matrix:
+      - CC: clang
+      - CC: gcc
+  install_script:
+    - brew update
+    - brew install autoconf autoconf-archive automake make pkg-config gcc libx11
+                   libxcomposite libxext libxfixes libxinerama imlib2
+  << : *common_script
+
+task:
+  container:
+    image: alpine:latest
+    kvm: true
+  install_script:
+    - apk add build-base pkgconfig gzip
+              xorg-server-dev libxcomposite-dev libxext-dev
+              libxfixes-dev libxinerama-dev imlib2-dev libbsd-dev
+  matrix:
+    - name: alpine-latest-bare-build
+      test_script:
+        - c99 -o src/scrot src/*.c $(pkg-config --cflags --libs ./deps.pc libbsd-overlay)
+        - src/scrot -v
+    - name: alpine-latest-gcc-aggressive-fanalyzer
+      # NOTE: libbsd on musl triggers some `#warning`. so use `-Wno-error=cpp`.
+      test_script:
+        - gcc --version
+        - gcc -std=c99 -o src/scrot src/*.c -Wall -Wextra -Wpedantic -Werror
+              -fanalyzer -O3 -flto -fuse-linker-plugin -fno-common
+              -fgraphite-identity -floop-nest-optimize -fipa-pta
+              $(pkg-config --cflags --libs ./deps.pc libbsd-overlay)
+              -Wno-error=cpp
+        - src/scrot -v
