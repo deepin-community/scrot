@@ -1,0 +1,2 @@
+version=4
+https://github.com/resurrecting-open-source-projects/scrot/tags .*/tags/v?(\d\S+)\.tar\.(?:bz2|gz|xz)

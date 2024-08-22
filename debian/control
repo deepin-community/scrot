@@ -1,15 +1,35 @@
-Source: template-repository
-Section: unknown
+Source: scrot
+Section: graphics
 Priority: optional
-Maintainer: Tsic404 <liuheng@deepin.org>
-Build-Depends: debhelper (>= 11)
-Standards-Version: 4.1.3
-Homepage: https://github.com/deepin-community/template-repository
-#Vcs-Browser: https://salsa.debian.org/debian/deepin-community-template-repository
-#Vcs-Git: https://salsa.debian.org/debian/deepin-community-template-repository.git
+Maintainer: Joao Eriberto Mota Filho <eriberto@debian.org>
+Standards-Version: 4.6.2
+Build-Depends: debhelper-compat (= 13),
+               autoconf-archive,
+               libbsd-dev,
+               libimlib2-dev,
+               libxcomposite-dev,
+               libxfixes-dev,
+               libxinerama-dev,
+               pkgconf
+Rules-Requires-Root: no
+Homepage: https://github.com/resurrecting-open-source-projects/scrot
+Vcs-Browser: https://salsa.debian.org/debian/scrot
+Vcs-Git: https://salsa.debian.org/debian/scrot.git
 
-Package: template-repository
+Package: scrot
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: <insert up to 60 chars description>
- <insert long description, indented with spaces>
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: command line screen capture utility
+ scrot (SCReenshOT)is a simple command line screen capture utility.
+ It uses imlib2 to grab and save images.
+ .
+ scrot has many useful features:
+   - Support for multiple image formats: JPG, PNG, GIF, and others.
+   - The screenshot's quality is configurable.
+   - It is possible to capture a specific window or a rectangular
+     area on the screen.
+   - Other features.
+ .
+ Because scrot is a command line utility, it can easily be scripted
+ and put to novel uses. For instance, scrot can be used to monitor a
+ desktop PC in absence and register unwanted activities.
